@@ -4,28 +4,40 @@ import type { Costume } from '../src/types.js';
 
 export const config = { runtime: 'nodejs' };
 
-export default async function handler(request: Request) {
+export async function GET() {
   try {
-    if (request.method === 'GET') return json({ costumes: await getCostumes() });
-    if (request.method === 'DELETE') {
-      const expected = process.env.RESULTS_CODE;
-      const supplied = request.headers.get('x-results-code');
-      if (!expected || !supplied || supplied !== expected) return json({ error: 'That code did not open the door.' }, 401);
+    return json({ costumes: await getCostumes() });
+  } catch (error) {
+    console.error(error);
+    return json({ error: 'The costume list could not be loaded. Check the Blob store connection.' }, 500);
+  }
+}
 
-      const costumeId = cleanText(new URL(request.url).searchParams.get('costumeId'), 80);
-      const costume = (await getCostumes()).find(item => item.id === costumeId);
-      if (!costume) return json({ error: 'That costume is no longer on the guest list.' }, 404);
+export async function DELETE(request: Request) {
+  try {
+    const expected = process.env.RESULTS_CODE;
+    const supplied = request.headers.get('x-results-code');
+    if (!expected || !supplied || supplied !== expected) return json({ error: 'That code did not open the door.' }, 401);
 
-      const votes = await list({ prefix: `votes/${costumeId}/`, limit: 1000 });
-      await del([
-        `costumes/${costumeId}.json`,
-        costume.photoUrl,
-        ...votes.blobs.map(blob => blob.url),
-      ]);
-      return json({ ok: true });
-    }
-    if (request.method !== 'POST') return json({ error: 'Method not allowed.' }, 405);
+    const costumeId = cleanText(new URL(request.url).searchParams.get('costumeId'), 80);
+    const costume = (await getCostumes()).find(item => item.id === costumeId);
+    if (!costume) return json({ error: 'That costume is no longer on the guest list.' }, 404);
 
+    const votes = await list({ prefix: `votes/${costumeId}/`, limit: 1000 });
+    await del([
+      `costumes/${costumeId}.json`,
+      costume.photoUrl,
+      ...votes.blobs.map(blob => blob.url),
+    ]);
+    return json({ ok: true });
+  } catch (error) {
+    console.error(error);
+    return json({ error: 'The costume could not be deleted.' }, 500);
+  }
+}
+
+export async function POST(request: Request) {
+  try {
     const body = await request.json();
     const participantName = cleanText(body.participantName, 60);
     const costumeName = cleanText(body.costumeName, 80);

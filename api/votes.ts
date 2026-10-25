@@ -3,9 +3,8 @@ import { criteria, type Ratings } from '../src/types.js';
 
 export const config = { runtime: 'nodejs' };
 
-export default async function handler(request: Request) {
+export async function POST(request: Request) {
   try {
-    if (request.method !== 'POST') return json({ error: 'Method not allowed.' }, 405);
     const body = await request.json();
     const costumeId = cleanText(body.costumeId, 80);
     const voterId = cleanText(body.voterId, 80);
