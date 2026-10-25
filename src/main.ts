@@ -86,12 +86,14 @@ function homePage() {
         <label>Your name<input name="participantName" maxlength="60" required placeholder="e.g. Lydia" /></label>
         <label>Costume name<input name="costumeName" maxlength="80" required placeholder="e.g. The Moonlit Moth" /></label>
         <label>A short description<textarea name="description" maxlength="280" required placeholder="Tell us about the idea, handmade details, or character…"></textarea><small>Maximum 280 characters</small></label>
-        <label>Costume portrait<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required /><span class="file-note">JPG, PNG or WebP · up to 3 MB</span></label>
+        <label>Costume portrait<input name="photo" type="file" accept="image/*" required /><span class="file-note">Take a photo or choose one · optimized automatically</span></label>
         <button class="primary-button" type="submit">Join the guest list</button>
       </form>
-    </dialog>`);
+    </dialog>
+    <button class="add-fab" id="add-costume-fab" aria-label="Add a costume">+</button>`);
 
   document.querySelector('#add-costume')?.addEventListener('click', () => (document.querySelector<HTMLDialogElement>('#costume-dialog'))?.showModal());
+  document.querySelector('#add-costume-fab')?.addEventListener('click', () => (document.querySelector<HTMLDialogElement>('#costume-dialog'))?.showModal());
   document.querySelector('.dialog-close')?.addEventListener('click', () => (document.querySelector<HTMLDialogElement>('#costume-dialog'))?.close());
   document.querySelectorAll<HTMLElement>('[data-rate]').forEach(button => button.addEventListener('click', () => {
     state.active = state.costumes.find(costume => costume.id === button.dataset.rate) || null;
@@ -106,16 +108,16 @@ async function submitCostume(event: SubmitEvent) {
   const button = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
   const data = new FormData(form);
   const photo = data.get('photo') as File;
-  if (photo.size > 3 * 1024 * 1024) return toast('Please choose a photo smaller than 3 MB.', 'bad');
+  if (photo.size > 12 * 1024 * 1024) return toast('Please choose a photo smaller than 12 MB.', 'bad');
   button.disabled = true;
   button.textContent = 'Summoning…';
   try {
-    const photoData = await fileToDataUrl(photo);
+    const photoData = await optimizeImage(photo);
     await api('/api/costumes', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         participantName: data.get('participantName'), costumeName: data.get('costumeName'),
-        description: data.get('description'), photoData, photoType: photo.type,
+        description: data.get('description'), photoData, photoType: 'image/jpeg',
       }),
     });
     (document.querySelector<HTMLDialogElement>('#costume-dialog'))?.close();
@@ -223,6 +225,20 @@ function resultsPage(results: Result[]) {
 const fileToDataUrl = (file: File) => new Promise<string>((resolve, reject) => {
   const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(reader.error); reader.readAsDataURL(file);
 });
+
+async function optimizeImage(file: File) {
+  const source = await fileToDataUrl(file);
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const element = new Image(); element.onload = () => resolve(element); element.onerror = reject; element.src = source;
+  });
+  const maxEdge = 1400;
+  const scale = Math.min(1, maxEdge / Math.max(image.naturalWidth, image.naturalHeight));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+  canvas.getContext('2d')?.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', .82);
+}
 
 async function loadCostumes() {
   loadingPage();
