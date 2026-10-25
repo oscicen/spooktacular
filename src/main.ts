@@ -200,13 +200,13 @@ async function loadResults(code: string) {
   try {
     const { results } = await api<{ results: Result[] }>('/api/results', { headers: { 'x-results-code': code } });
     history.replaceState({}, '', `/results?code=${encodeURIComponent(code)}`);
-    resultsPage(results);
+    resultsPage(results, code);
   } catch (error) {
     resultsGate(error instanceof Error ? error.message : 'That code did not open the door.');
   }
 }
 
-function resultsPage(results: Result[]) {
+function resultsPage(results: Result[], code: string) {
   const podium = results.slice(0, 3);
   const maxVotes = Math.max(1, ...results.map(result => result.voteCount));
   app.innerHTML = shell(`
@@ -216,10 +216,26 @@ function resultsPage(results: Result[]) {
         <div class="podium">${podium.map((result, index) => `<article class="place place-${index + 1}"><span class="medal">${['♛','Ⅱ','Ⅲ'][index]}</span><img src="${escapeHtml(result.photoUrl)}" alt="${escapeHtml(result.costumeName)}"/><small>${index + 1}${['st','nd','rd'][index]} place</small><h2>${escapeHtml(result.costumeName)}</h2><p>${escapeHtml(result.participantName)}</p><strong>${result.score ? result.score.toFixed(2) : '—'}<i>/ 5</i></strong><em>${result.voteCount} ${result.voteCount === 1 ? 'vote' : 'votes'}</em></article>`).join('')}</div>
         <div class="score-table">
           <div class="score-head"><span>Rank & costume</span>${criteria.map(item => `<span>${item.label}</span>`).join('')}<span>Overall</span></div>
-          ${results.map((result, index) => `<div class="score-row"><span><b>#${index + 1}</b><img src="${escapeHtml(result.photoUrl)}" alt=""/><i><strong>${escapeHtml(result.costumeName)}</strong><small>${escapeHtml(result.participantName)} · ${result.voteCount} votes</small></i></span>${criteria.map(item => `<span data-label="${item.label}">${result.breakdown[item.key].toFixed(1)}</span>`).join('')}<span data-label="Overall"><strong>${result.score.toFixed(2)}</strong><i class="vote-bar" style="--width:${(result.voteCount / maxVotes) * 100}%"></i></span></div>`).join('')}
+          ${results.map((result, index) => `<div class="score-row"><span><b>#${index + 1}</b><img src="${escapeHtml(result.photoUrl)}" alt=""/><i><strong>${escapeHtml(result.costumeName)}</strong><small>${escapeHtml(result.participantName)} · ${result.voteCount} votes</small><button class="delete-costume" data-delete="${result.id}" data-name="${escapeHtml(result.costumeName)}">Remove contestant</button></i></span>${criteria.map(item => `<span data-label="${item.label}">${result.breakdown[item.key].toFixed(1)}</span>`).join('')}<span data-label="Overall"><strong>${result.score.toFixed(2)}</strong><i class="vote-bar" style="--width:${(result.voteCount / maxVotes) * 100}%"></i></span></div>`).join('')}
         </div>` : '<div class="empty-state"><div class="empty-icon">☾</div><h3>No verdicts yet</h3><p>The scores will appear after the first rating is cast.</p></div>'}
       <a class="back-button results-back" href="/">← Back to the party</a>
     </section>`);
+  document.querySelectorAll<HTMLButtonElement>('[data-delete]').forEach(button => button.addEventListener('click', async () => {
+    const costumeId = button.dataset.delete;
+    const costumeName = button.dataset.name || 'this contestant';
+    if (!costumeId || !window.confirm(`Remove “${costumeName}”? This also permanently deletes its photo and every vote it received.`)) return;
+    button.disabled = true;
+    button.textContent = 'Removing…';
+    try {
+      await api(`/api/costumes?costumeId=${encodeURIComponent(costumeId)}`, { method: 'DELETE', headers: { 'x-results-code': code } });
+      toast('Contestant removed from the party.');
+      await loadResults(code);
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'Could not remove the contestant.', 'bad');
+      button.disabled = false;
+      button.textContent = 'Remove contestant';
+    }
+  }));
 }
 
 const fileToDataUrl = (file: File) => new Promise<string>((resolve, reject) => {

@@ -8,6 +8,7 @@ A no-login Halloween costume rating app built for Vercel. Guests can add contest
 - Five 1–5 judging criteria: originality, creativity, effort, craftsmanship, and spooky presence
 - One editable vote per browser per costume
 - Hidden, code-protected results page with podium, overall average, vote count, and category breakdown
+- Organizer-only contestant removal from the protected results page (including photo and votes)
 - Responsive gothic-storybook design
 - Vercel Blob storage (no separate database account needed)
 - GitHub-ready automatic Vercel deployments
