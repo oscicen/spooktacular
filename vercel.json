@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/results", "destination": "/index.html" },
+    { "source": "/id/:path*", "destination": "/index.html" },
     { "source": "/rate/:path*", "destination": "/index.html" }
   ]
 }

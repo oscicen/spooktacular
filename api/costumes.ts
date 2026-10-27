@@ -6,7 +6,16 @@ export const config = { runtime: 'nodejs' };
 
 export async function GET() {
   try {
-    return json({ costumes: await getCostumes() });
+    const [costumes, votes] = await Promise.all([
+      getCostumes(),
+      list({ prefix: 'votes/', limit: 1000 }),
+    ]);
+    const voteCounts = new Map<string, number>();
+    votes.blobs.forEach(blob => {
+      const costumeId = blob.pathname.split('/')[1];
+      if (costumeId) voteCounts.set(costumeId, (voteCounts.get(costumeId) || 0) + 1);
+    });
+    return json({ costumes: costumes.map(costume => ({ ...costume, voteCount: voteCounts.get(costume.id) || 0 })) });
   } catch (error) {
     console.error(error);
     return json({ error: 'The costume list could not be loaded. Check the Blob store connection.' }, 500);

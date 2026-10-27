@@ -1,11 +1,11 @@
 # Spooktacular Costume Awards
 
-A no-login Halloween costume rating app built for Vercel. Guests can add contestants, upload a costume portrait, and score each costume across five categories. Scores remain hidden during judging and are only available at `/results` with the organizer's secret code.
+A no-login Halloween costume rating app built for Vercel. Guests can add contestants, upload a costume portrait, and score each costume across four categories. Scores remain hidden during judging and are only available at `/results` with the organizer's secret code.
 
 ## What it includes
 
 - Shared costume roster with photos and descriptions
-- Five 1–5 judging criteria: originality, creativity, effort, craftsmanship, and spooky presence
+- Four 1–5 judging criteria: originality, creativity, effort, and craftsmanship
 - One editable vote per browser per costume
 - Hidden, code-protected results page with podium, overall average, vote count, and category breakdown
 - Organizer-only contestant removal from the protected results page (including photo and votes)

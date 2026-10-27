@@ -3,7 +3,6 @@ export const criteria = [
   { key: 'creativity', label: 'Creativity', icon: '☾', hint: 'Imaginative choices and details' },
   { key: 'effort', label: 'Effort', icon: '✂', hint: 'Time and care put into it' },
   { key: 'craftsmanship', label: 'Craftsmanship', icon: '⚒', hint: 'How well it all came together' },
-  { key: 'presence', label: 'Spooky Presence', icon: '♰', hint: 'Commitment to the character' },
 ] as const;
 
 export type CriterionKey = (typeof criteria)[number]['key'];
@@ -15,6 +14,10 @@ export type Costume = {
   description: string;
   photoUrl: string;
   createdAt: string;
+};
+
+export type PublicCostume = Costume & {
+  voteCount: number;
 };
 
 export type Ratings = Record<CriterionKey, number>;
