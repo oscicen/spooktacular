@@ -25,7 +25,10 @@ const shell = (content: string) => `
       <span class="brand-mark">S</span>
       <span><b>Spooktacular</b><small>Costume Awards</small></span>
     </a>
-    <span class="moon" aria-hidden="true"><i></i></span>
+    <div class="header-actions">
+      <a class="results-button" href="/results">View results</a>
+      <span class="moon" aria-hidden="true"><i></i></span>
+    </div>
   </header>
   <main>${content}</main>
   <footer><span>✦</span> Crafted for one strange and wonderful night <span>✦</span></footer>
